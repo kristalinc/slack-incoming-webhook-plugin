@@ -52,6 +52,7 @@ public class SlackNotificationPlugin implements NotificationPlugin {
     private static final String SLACK_MESSAGE_COLOR_YELLOW = "warning";
     private static final String SLACK_MESSAGE_COLOR_RED = "danger";
 
+    private static final String SLACK_EXT_MESSAGE_TEMPLATE_PATH = "/var/lib/rundeck/libext/templates";
     private static final String SLACK_MESSAGE_TEMPLATE = "slack-incoming-message.ftl";
 
     private static final String TRIGGER_START = "start";
@@ -73,6 +74,9 @@ public class SlackNotificationPlugin implements NotificationPlugin {
     @PluginProperty(title = "Slack Channel", description = "Slack Channel, like #channel-name (optional)")
     private String slack_channel;
 
+    @PluginProperty(title = "External Template",description = "External Freemarker Template to use for notifications",required = false)
+    private String external_template;
+
     /**
      * Sends a message to a Slack room when a job notification event is raised by Rundeck.
      *
@@ -86,11 +90,25 @@ public class SlackNotificationPlugin implements NotificationPlugin {
 
         String ACTUAL_SLACK_TEMPLATE;
 
-        ClassTemplateLoader builtInTemplate = new ClassTemplateLoader(SlackNotificationPlugin.class, "/templates");
-        TemplateLoader[] loaders = new TemplateLoader[]{builtInTemplate};
-        MultiTemplateLoader mtl = new MultiTemplateLoader(loaders);
-        FREEMARKER_CFG.setTemplateLoader(mtl);
-        ACTUAL_SLACK_TEMPLATE = SLACK_MESSAGE_TEMPLATE;
+        if(null != external_template && !external_template.isEmpty()) {
+            try {
+                FileTemplateLoader externalTemplate = new FileTemplateLoader(new File(SLACK_EXT_MESSAGE_TEMPLATE_PATH));
+                System.err.printf("Found external template directory. Using it.\n");
+                TemplateLoader[] loaders = new TemplateLoader[]{externalTemplate};
+                MultiTemplateLoader mtl = new MultiTemplateLoader(loaders);
+                FREEMARKER_CFG.setTemplateLoader(mtl);
+                ACTUAL_SLACK_TEMPLATE = external_template;
+            } catch (Exception e) {
+                System.err.printf("No such directory: %s\n", SLACK_EXT_MESSAGE_TEMPLATE_PATH);
+                return false;
+            }
+        }else{
+            ClassTemplateLoader builtInTemplate = new ClassTemplateLoader(SlackNotificationPlugin.class, "/templates");
+            TemplateLoader[] loaders = new TemplateLoader[]{builtInTemplate};
+            MultiTemplateLoader mtl = new MultiTemplateLoader(loaders);
+            FREEMARKER_CFG.setTemplateLoader(mtl);
+            ACTUAL_SLACK_TEMPLATE = SLACK_MESSAGE_TEMPLATE;
+        }
 
         TRIGGER_NOTIFICATION_DATA.put(TRIGGER_START,   new SlackNotificationData(ACTUAL_SLACK_TEMPLATE, SLACK_MESSAGE_COLOR_YELLOW));
         TRIGGER_NOTIFICATION_DATA.put(TRIGGER_SUCCESS, new SlackNotificationData(ACTUAL_SLACK_TEMPLATE, SLACK_MESSAGE_COLOR_GREEN));
@@ -100,7 +118,7 @@ public class SlackNotificationPlugin implements NotificationPlugin {
         try {
             FREEMARKER_CFG.setSetting(Configuration.CACHE_STORAGE_KEY, "strong:20, soft:250");
         }catch(Exception e){
-            System.err.printf("Got and exception from Freemarker: %s", e.getMessage());
+            System.err.printf("Got an exception from Freemarker: %s", e.getMessage());
         }
 
         if (!TRIGGER_NOTIFICATION_DATA.containsKey(trigger)) {

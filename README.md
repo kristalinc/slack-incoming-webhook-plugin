@@ -1,34 +1,28 @@
 rundeck-slack-incoming-webhook-plugin
 ======================
 
-Sends rundeck notification messages to a slack channel.  This plugin  is based on [rundeck-slack-plugin](https://github.com/bitplaces/rundeck-slack-plugin)(based on run-hipchat-plugin).
+Sends rundeck notification messages to a slack channel.  This plugin adds the ability to use customized templates (as [rundeck-slack-plugin](https://github.com/bitplaces/rundeck-slack-plugin) does) to [slack-incoming-webhook-plugin](https://github.com/rundeck-plugins/slack-incoming-webhook-plugin).
 
 Installation Instructions
 -------------------------
 
 See the [Included Plugins | Rundeck Documentation](http://rundeck.org/docs/plugins-user-guide/installing.html#included-plugins "Included Plugins") for more information on installing rundeck plugins.
 
-## Download jarfile
-
-1. Download jarfile from [releases](https://github.com/higanworks/rundeck-slack-incoming-webhook-plugin/releases).
-2. copy jarfile to `$RDECK_BASE/libext`
-
 ## Build
 
-1. build the source by gradle.
-2. copy jarfile to `$RDECK_BASE/libext`
+1. build the source with gradle
+2. copy the jarfile to `$RDECK_BASE/libext`
 
 
 ## Configuration
-This plugin uses Slack incoming-webhooks. Create a new webhook and copy the provided url.
+This plugin uses Slack incoming-webhooks. Create a new webhook and copy the provided WebHook Token.
+
+Copy any custom FreeMarker templates to `/var/lib/rundeck/libext/templates` and refer to them by file name in the External Template field. The External Template field is optional. If you do not provide an external template, the built-in template from `src/main/resources/templates/slack-incoming-message.ftl` will be used.
 
 ![configuration](config.png)
 
-The only required configuration settings are:
 
-- `WebHook URL`: Slack incoming-webhook URL.
-
-## Slack message example.
+## Slack message example (from the built-in template)
 
 On success.
 
@@ -39,6 +33,7 @@ On failure.
 ![on failure](on_failure.png)
 
 ## Contributors
+*  [kristalinc/slack-incoming-webhook-plugin](https://github.com/kristalinc/slack-incoming-webhook-plugin) code merge by: Gregory LeFevre @gl1f1v21
 *  Original [hbakkum/rundeck-hipchat-plugin](https://github.com/hbakkum/rundeck-hipchat-plugin) author: Hayden Bakkum @hbakkum
 *  Original [bitplaces/rundeck-slack-plugin](https://github.com/bitplaces/rundeck-slack-plugin) authors
     *  @totallyunknown
